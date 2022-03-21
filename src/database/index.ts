@@ -5,6 +5,7 @@ export const database = {
       const connection = await typeorm.createConnection();
       return connection;
     } catch(error) {
+      console.log(error);
       throw new Error(error.message);
     };
   },

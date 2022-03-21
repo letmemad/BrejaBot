@@ -57,6 +57,7 @@ export const InteractionController = {
 
       return interaction.reply({ embeds: [message] });
     } catch(error) {
+      console.log(error);
       return interaction.reply({
         content: "ops, ocorreu um erro no meu servidor e não foi possível concluir a ação.",
         ephemeral: true
