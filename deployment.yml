@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: brejabot 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: brejabot
+  template:
+    metadata:
+      labels:
+        app: brejabot 
+    spec:
+      containers:
+        - name: brejabot 
+          image: matheuspinesso/brejabot
+          ports:
+          - containerPort: 3000
