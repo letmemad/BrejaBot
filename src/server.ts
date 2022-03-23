@@ -1,11 +1,9 @@
 import "reflect-metadata";
-import DiscordJS, { GuildMember, MessageEmbed } from "discord.js";
+import DiscordJS, { MessageEmbed } from "discord.js";
 import dotenv from "dotenv";
 import botCommands from "./commands";
 import { database } from "./database";
-import { InteractionController } from "./controllers/InteractionController";
-import { GuildMemberController } from "./controllers/GuildController";
-import whitelist from "./commands/whitelist";
+import { BeerController } from "./controllers/BeerController";
 dotenv.config();
 
 const client = new DiscordJS.Client({
@@ -27,14 +25,6 @@ client.on("ready", async () => {
       commands?.create(botCommand);
     };
 
-    // ADICIONAR LISTENER PARA QUANDO ADICIONAR OU REMOVER UM MEMBRO DO SERVER
-    client.on("guildMemberAdd", (member: GuildMember) => GuildMemberController.onAvailable(member));
-    client.on("guildMemberRemove", (member: GuildMember) => GuildMemberController.onRemove(member));
-
-    // ADICIONAR TODOS OS MEMBROS DO SERVIDOR NO BANCO
-    const members = await guild.members.list();
-    members.each((member) => GuildMemberController.onAvailable(member));
-
     // DISPARAR MENSAGEM DE BEM-VINDO
     const mainChannelNames = ["geral", "general", "main"];
     const channel = guild.channels.cache.find(value => mainChannelNames.includes(value.name));
@@ -47,20 +37,70 @@ client.on("ready", async () => {
       .addField("/ranking", "comando para mostrar o ranking dos cervejeiros.")
 
       await channel.send({ embeds: [messageToSend] });
+
+      const members = await guild.members.fetch();
+      members.map(async (member) => {
+        if(!member.user.bot) {
+          try {
+            await BeerController.create({ 
+              from_id: client.user.id, 
+              to_id: member.user.id,
+              guild_id: guild.id,
+              motivo: "boas vindas"
+            });
+  
+            await channel.send(`:beer: <@${member.user.id}> aqui está uma breja geladinha para você.`);
+          } catch(error) {
+            console.log(error);
+            await channel.send(`:beer: <@${member.user.id}> infelizmente acabou o estoque das brejas. :broken_heart:`);
+          };
+        };
+      });
     };
    });
 
-   client.on("interactionCreate", (interaction: any) => {
+   client.on("interactionCreate", async (interaction: any) => {
     if(!interaction.isCommand) { return };
 
-    const { commandName } = interaction;
+    const { commandName, user, options, guildId } = interaction;
     switch(commandName) {
       case "breja": {
-        return InteractionController.onGiveBeer(interaction);
+        const to = options.getUser("para");
+        if(user.id === to.id) {
+          return interaction.reply({
+            content: `<@${user.id}> tentou dar uma breja para ele mesmo, pode isso Arnaldo ?!`
+          });
+        };
+
+        try {
+          const motivo = options.getString("motivo");
+          const beer = await BeerController.create({ 
+            to_id: to.id, 
+            from_id: user.id,
+            guild_id: guildId, 
+            motivo,
+          });
+
+          let message = new MessageEmbed()
+          .setTitle(":beer: Breja geladinha!")
+          .setDescription(`<@${user.id}> deu uma breja geladinha para <@${to.id}>`)
+          .addField("MOTIVO", beer.motivo)
+          .setColor("RANDOM");
+
+          return interaction.reply({ embeds: [message] });
+        } catch(error) {
+          return interaction.reply({
+            content: "ops, parece que estou com alguns problemas.",
+            ephemeral: true,
+          });
+        };
       };
 
       case "ranking": {
-        return InteractionController.viewRanking(interaction);
+        break;
+      };
+
+      case "info": {
       };
 
       default: {
