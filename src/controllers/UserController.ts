@@ -8,7 +8,7 @@ type CreateUserDTO = {
 export const UserController = {
   async createOrFind({user_id, guild_id}: CreateUserDTO) {
     try {
-      const user = await User.findOne({ where: { user_id, guild_id } });
+      const user = await User.findOne({ where: { id: user_id, guild_id } });
       if(user) { 
         return user;
       };
@@ -18,7 +18,7 @@ export const UserController = {
       
       return result;
     } catch(error) {
-      throw new Error(error);
+      throw new Error(error.message);
     };
   },
 };

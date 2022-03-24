@@ -27,17 +27,16 @@ export class CreateBeer1648065175846 implements MigrationInterface {
           name: "action",
           type: "varchar",
           isNullable: false,
-          default: "DONATE",
         }, {
           name: "created_at",
           type: "date",
           isNullable: false,
-          default: "CURRENT_TIMESTAMP",
+          default: "now()",
         }, {
           name: "updated_at",
           type: "date",
           isNullable: false,
-          default: "CURRENT_TIMESTAMP",
+          default: "now()",
         }]
       }));
 

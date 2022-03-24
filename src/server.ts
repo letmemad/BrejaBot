@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import botCommands from "./commands";
 import { database } from "./database";
 import { BeerController } from "./controllers/BeerController";
+import { UserController } from "./controllers/UserController";
 dotenv.config();
 
 const client = new DiscordJS.Client({
@@ -40,21 +41,7 @@ client.on("ready", async () => {
 
       const members = await guild.members.fetch();
       members.map(async (member) => {
-        if(!member.user.bot) {
-          try {
-            await BeerController.create({ 
-              from_id: client.user.id, 
-              to_id: member.user.id,
-              guild_id: guild.id,
-              motivo: "boas vindas"
-            });
-  
-            await channel.send(`:beer: <@${member.user.id}> aqui está uma breja geladinha para você.`);
-          } catch(error) {
-            console.log(error);
-            await channel.send(`:beer: <@${member.user.id}> infelizmente acabou o estoque das brejas. :broken_heart:`);
-          };
-        };
+        await UserController.createOrFind({ user_id: member.user.id, guild_id: guild.id });
       });
     };
    });

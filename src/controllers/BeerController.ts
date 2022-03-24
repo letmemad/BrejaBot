@@ -20,7 +20,8 @@ export const BeerController = {
 
       return result;
     } catch(error) {
-      throw new Error(error);
+      console.log(error);
+      throw new Error(error.message);
     };
   },
 };
