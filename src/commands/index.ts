@@ -17,4 +17,18 @@ export default [{
   }, {
     name: "ranking",
     description: "visualize o ranking de brejas",
+  }, {
+    name: "punir",
+    description: "punir um cervejeiro",
+    options: [{
+      name: "quem",
+      description: "qual cervejeiro vai ser punido",
+      type: Constants.ApplicationCommandOptionTypes.USER,
+      required: true,
+    }, {
+      name: "motivo",
+      description: "por qual motivo o cervejeiro está sendo punido",
+      type: Constants.ApplicationCommandOptionTypes.STRING,
+      required: false,
+    }]
   }] as Array<ApplicationCommandDataResolvable>;;

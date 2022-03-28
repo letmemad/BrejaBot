@@ -5,6 +5,8 @@ import botCommands from "./commands";
 import { database } from "./database";
 import { BeerController } from "./controllers/BeerController";
 import { UserController } from "./controllers/UserController";
+import { User } from "./database/entities/User";
+import { Beer } from "./database/entities/Beer";
 dotenv.config();
 
 const client = new DiscordJS.Client({
@@ -41,7 +43,9 @@ client.on("ready", async () => {
 
       const members = await guild.members.fetch();
       members.map(async (member) => {
-        await UserController.createOrFind({ user_id: member.user.id, guild_id: guild.id });
+        if(!member.user.bot) {
+          await UserController.createOrFind({ user_id: member.user.id, guild_id: guild.id });
+        };
       });
     };
    });
@@ -84,15 +88,50 @@ client.on("ready", async () => {
       };
 
       case "ranking": {
-        break;
+        const message = new MessageEmbed()
+        .setTitle("RANKING DOS CERVEJEIROS")
+        .setDescription("o raking é ordenado pelo cervejeiro que mais tem brejas em sua conta.")
+        .setColor("RANDOM");
+
+        const users = await User.find({ where: { guild_id: guildId }, relations: ["beers"] });
+        const ranking = users.sort((a, b) => b.beers.length - a.beers.length);
+        for(let index = 0; index < ranking.length; index++) {
+          const position = (index + 1);
+          const item = ranking[(index)];
+
+          message.addField(`${position}º LUGAR`, `<@${item.id}> COM TOTAL DE ${item.beers.length} BREJA(S)`);
+        };
+        
+        return interaction.reply({ embeds: [message] });
       };
 
-      case "info": {
+      case "punir": {
+        try {
+          const who = options.getUser("quem");
+          const reason = options.getString("motivo");
+
+          await Beer.createQueryBuilder("beer")
+          .update()
+          .set({ disabled_at: new Date(), disabled_by: user.id, disabled_reason: reason })
+          .where("beer.to_id = :fromId", { fromId: who.id })
+          .execute();
+
+          const message = new MessageEmbed()
+          .setTitle("CERVEJEIRO PUNIDO!")
+          .setDescription(`<@${who.id}> foi punido pelo <@${user.id}>`)
+          .addField("MOTIVO", reason ? reason : "Não informou o motivo")
+          .setColor("RED");
+
+          return interaction.reply({ embeds: [message] });
+        } catch(error) {
+          return interaction.reply({
+            content: `Não foi possível punir o cervejeiro [${error.message}]`,
+            ephemeral: true,
+          });
+        };
       };
 
-      default: {
-
-      };
+      default: { return };
     };
   });
 });

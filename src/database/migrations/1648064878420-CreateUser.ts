@@ -13,11 +13,6 @@ export class CreateUser1648064878420 implements MigrationInterface {
           name: "guild_id",
           type: "varchar",
           isNullable: false,
-        },{
-          name: "beer_count",
-          type: "integer",
-          isNullable: false,
-          default: 0,
         }, {
           name: "created_at",
           type: "date",

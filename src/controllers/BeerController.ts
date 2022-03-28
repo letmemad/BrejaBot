@@ -15,7 +15,7 @@ export const BeerController = {
       const from = await UserController.createOrFind({ user_id: from_id, guild_id });
       const to = await UserController.createOrFind({ user_id: to_id, guild_id });
 
-      const result = Beer.create({ from_id: from.id, to_id: to.id, action: "DONATE", motivo });
+      const result = Beer.create({ from_id: from.id, to_id: to.id, motivo });
       await result.save();
 
       return result;

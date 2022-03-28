@@ -37,6 +37,18 @@ export class CreateBeer1648065175846 implements MigrationInterface {
           type: "date",
           isNullable: false,
           default: "now()",
+        }, {
+          name: "disabled_by",
+          type: "varchar",
+          isNullable: true,
+        }, {
+          name: "disabled_reason",
+          type: "varchar",
+          isNullable: true,
+        }, {
+          name: "disabled_at",
+          type: "date",
+          isNullable: true,
         }]
       }));
 
@@ -50,6 +62,13 @@ export class CreateBeer1648065175846 implements MigrationInterface {
         }),
         new TableForeignKey({
           columnNames: ["from_id"],
+          referencedColumnNames: ["id"],
+          referencedTableName: "user",
+          onUpdate: "CASCADE",
+          onDelete: "CASCADE"
+        }),
+        new TableForeignKey({
+          columnNames: ["disabled_by"],
           referencedColumnNames: ["id"],
           referencedTableName: "user",
           onUpdate: "CASCADE",

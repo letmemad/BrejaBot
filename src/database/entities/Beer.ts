@@ -1,4 +1,4 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { User } from "./User";
 
 @Entity()
@@ -12,9 +12,6 @@ export class Beer extends BaseEntity {
   @Column()
   to_id: string;
 
-  @Column()
-  action: "DONATE" | "REMOVE";
-
   @Column("varchar")
   motivo: string;
 
@@ -23,6 +20,15 @@ export class Beer extends BaseEntity {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({ nullable: true })
+  disabled_by?: string;
+
+  @Column({ nullable: true })
+  disabled_reason?: string;
+
+  @DeleteDateColumn({ nullable: true })
+  disabled_at?: Date;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: "to_id", referencedColumnName: "id" })
