@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { ApplicationCommandDataResolvable, Constants } from "discord.js";
 
 export default [{
@@ -28,6 +29,20 @@ export default [{
     }, {
       name: "motivo",
       description: "por qual motivo o cervejeiro está sendo punido",
+      type: Constants.ApplicationCommandOptionTypes.STRING,
+      required: false,
+    }]
+  }, {
+    name: "historico",
+    description: "conferir o histórico de um cervejeiro.",
+    options: [{
+      name: "quem",
+      description: "qual cervejeiro você deseja consultar o histórico",
+      type: Constants.ApplicationCommandOptionTypes.USER,
+      required: true,
+    }, {
+      name: "data",
+      description: `exemplo: ${format(new Date(), "MM/yyyy")}`,
       type: Constants.ApplicationCommandOptionTypes.STRING,
       required: false,
     }]

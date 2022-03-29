@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import {format, getMonth, getYear, parseISO} from "date-fns";
 import DiscordJS, { MessageEmbed } from "discord.js";
 import dotenv from "dotenv";
 import botCommands from "./commands";
@@ -38,6 +39,8 @@ client.on("ready", async () => {
       .setDescription("Sou o **BrejaBot**, um bot criado para automatizar o processo de premiação com cervejas... Até porque todos aqui gostam de uma cerveja geladinha né ?! :beers:")
       .addField("/breja", "comando para dar uma breja geladinha como prêmio.")
       .addField("/ranking", "comando para mostrar o ranking dos cervejeiros.")
+      .addField("/punir", "comando para punir um cervejeiro.")
+      .addField("/historico", "visualizar o histórico de um cervejeiro.")
 
       await channel.send({ embeds: [messageToSend] });
 
@@ -53,7 +56,7 @@ client.on("ready", async () => {
    client.on("interactionCreate", async (interaction: any) => {
     if(!interaction.isCommand) { return };
 
-    const { commandName, user, options, guildId } = interaction;
+    const { commandName, user, options, guildId, guild } = interaction;
     switch(commandName) {
       case "breja": {
         const to = options.getUser("para");
@@ -69,7 +72,7 @@ client.on("ready", async () => {
             to_id: to.id, 
             from_id: user.id,
             guild_id: guildId, 
-            motivo,
+            motivo: motivo || "Não informado",
           });
 
           let message = new MessageEmbed()
@@ -81,7 +84,7 @@ client.on("ready", async () => {
           return interaction.reply({ embeds: [message] });
         } catch(error) {
           return interaction.reply({
-            content: "ops, parece que estou com alguns problemas.",
+            content: `ops, parece que estou com alguns problemas. [${error.message}]`,
             ephemeral: true,
           });
         };
@@ -110,22 +113,71 @@ client.on("ready", async () => {
           const who = options.getUser("quem");
           const reason = options.getString("motivo");
 
-          await Beer.createQueryBuilder("beer")
-          .update()
-          .set({ disabled_at: new Date(), disabled_by: user.id, disabled_reason: reason })
-          .where("beer.to_id = :fromId", { fromId: who.id })
-          .execute();
+          const beer = await Beer.findOne({ order: { created_at: "DESC" } });
+          if(!beer) {
+            return interaction.reply({
+              content: `<@${user.id}> tentou punir o <@${who.id}> porém o cervejeiro está falido.`
+            });
+          };
+
+          await Beer.update(beer.id, {
+            disabled_at: `${(new Date()).toISOString()}`,
+            disabled_by: user.id, 
+            disabled_reason: reason || "Não informou o motivo"
+          });
 
           const message = new MessageEmbed()
           .setTitle("CERVEJEIRO PUNIDO!")
           .setDescription(`<@${who.id}> foi punido pelo <@${user.id}>`)
-          .addField("MOTIVO", reason ? reason : "Não informou o motivo")
+          .addField("MOTIVO", reason || "Não informou o motivo")
           .setColor("RED");
 
           return interaction.reply({ embeds: [message] });
         } catch(error) {
           return interaction.reply({
             content: `Não foi possível punir o cervejeiro [${error.message}]`,
+            ephemeral: true,
+          });
+        };
+      };
+
+      case "historico": {
+        try {
+          const who = options.getUser("quem") as DiscordJS.User;
+          const data = options.getString("data") as String;
+          const date = new Date();
+
+          if(data && data.match(/^((0[1-9])|(1[0-2]))\/((2009)|(20[1-2][0-9]))$/)) {
+            date.setMonth(Number((data.split("/"))[0]) - 1);
+            date.setFullYear(Number((data.split("/"))[1]));
+          };
+
+          const beers = await Beer.createQueryBuilder("beer")
+          .select()
+          .orderBy("beer.created_at", "DESC")
+          .innerJoin("user", "user", "beer.to_id = user.id")
+          .where("beer.to_id = :userId", { userId: who.id })
+          .andWhere("user.guild_id = :guildId", { guildId })
+          .andWhere("EXTRACT(MONTH FROM beer.created_at) = :month", { month: format(date, "MM") })
+          .andWhere("EXTRACT(YEAR FROM beer.created_at) = :year", { year: format(date, "yyyy") })
+          .getMany();
+
+          const message = new MessageEmbed()
+          .setTitle(`HISTÓRICO DO CERVEJEIRO`)
+          .setDescription(`histórico do cervejeiro <@${who.id}>`)
+          .setColor('RANDOM')
+          .addField("TOTAL", `${beers.length} breja(s)`, true)
+          .addField("DATA", `${format(date, "MM/yyyy")}`, true)
+
+          for(let beer of beers) {
+            message.addField(`${format(beer.created_at, "dd/MM/yyyy")}`,
+            `<@${beer.from_id}> > ${beer.motivo}`, false);
+          };
+
+          return interaction.reply({ embeds: [message] });
+        } catch(error) {
+          return interaction.reply({
+            content: `Não foi possível consultar o cervejeiro. [${error.message}]`,
             ephemeral: true,
           });
         };

@@ -12,7 +12,7 @@ export class Beer extends BaseEntity {
   @Column()
   to_id: string;
 
-  @Column("varchar")
+  @Column("varchar", { nullable: true })
   motivo: string;
 
   @CreateDateColumn()

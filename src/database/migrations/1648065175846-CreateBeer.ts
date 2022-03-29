@@ -29,12 +29,12 @@ export class CreateBeer1648065175846 implements MigrationInterface {
           isNullable: false,
         }, {
           name: "created_at",
-          type: "date",
+          type: "timestamp",
           isNullable: false,
           default: "now()",
         }, {
           name: "updated_at",
-          type: "date",
+          type: "timestamp",
           isNullable: false,
           default: "now()",
         }, {
@@ -47,7 +47,7 @@ export class CreateBeer1648065175846 implements MigrationInterface {
           isNullable: true,
         }, {
           name: "disabled_at",
-          type: "date",
+          type: "timestamp",
           isNullable: true,
         }]
       }));
