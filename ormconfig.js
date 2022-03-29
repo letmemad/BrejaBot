@@ -6,7 +6,6 @@ module.exports = {
   password: String(process.env.DB_PASSWORD),
   database: String(process.env.DB_DATABASE),
   entities: [String(process.env.DB_ENTITIES_PATH)],
-  synchronize: true,
   cli: {
   entitiesDir: "src/database/entities",
   migrationsDir: "src/database/migrations",
