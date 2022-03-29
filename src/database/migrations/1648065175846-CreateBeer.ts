@@ -24,10 +24,6 @@ export class CreateBeer1648065175846 implements MigrationInterface {
           type: "varchar",
           isNullable: true,
         }, {
-          name: "action",
-          type: "varchar",
-          isNullable: false,
-        }, {
           name: "created_at",
           type: "timestamp",
           isNullable: false,
