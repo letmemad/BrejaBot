@@ -113,7 +113,11 @@ client.on("ready", async () => {
           const who = options.getUser("quem");
           const reason = options.getString("motivo");
 
-          const beer = await Beer.findOne({ order: { created_at: "DESC" } });
+          const beer = await Beer.findOne({
+            where: { to_id: who.id, guild_id: guildId },
+            order: { created_at: "DESC" }
+          });
+          
           if(!beer) {
             return interaction.reply({
               content: `<@${user.id}> tentou punir o <@${who.id}> porém o cervejeiro está falido.`
