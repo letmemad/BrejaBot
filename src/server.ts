@@ -114,7 +114,7 @@ client.on("ready", async () => {
           const reason = options.getString("motivo");
 
           const beer = await Beer.findOne({
-            where: { to_id: who.id, guild_id: guildId },
+            where: { to_id: who.id },
             order: { created_at: "DESC" }
           });
           
