@@ -116,6 +116,7 @@ client.on("ready", async () => {
           const beer = await Beer.createQueryBuilder("beer")
           .select()
           .innerJoinAndSelect("beer.toUser", "to", "to.id = :id", {id: who.id})
+          .where("to.guild_id = :guildId", { guildId })
           .getOne();
           
           if(!beer) {
