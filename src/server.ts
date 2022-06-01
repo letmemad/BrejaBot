@@ -113,10 +113,10 @@ client.on("ready", async () => {
           const who = options.getUser("quem");
           const reason = options.getString("motivo");
 
-          const beer = await Beer.findOne({
-            where: { to_id: who.id },
-            order: { created_at: "DESC" }
-          });
+          const beer = await Beer.createQueryBuilder("beer")
+          .select()
+          .innerJoinAndSelect("beer.toUser", "to", "to.id = :id", {id: who.id})
+          .getOne();
           
           if(!beer) {
             return interaction.reply({
