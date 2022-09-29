@@ -1,14 +1,18 @@
 import "reflect-metadata";
-import {format, getMonth, getYear, parseISO} from "date-fns";
+import {format} from "date-fns";
 import DiscordJS, { MessageEmbed } from "discord.js";
 import dotenv from "dotenv";
+import path from "path";
+
 import botCommands from "./commands";
 import { database } from "./database";
 import { BeerController } from "./controllers/BeerController";
 import { UserController } from "./controllers/UserController";
 import { User } from "./database/entities/User";
 import { Beer } from "./database/entities/Beer";
-dotenv.config();
+
+const envPath = path.resolve(__dirname, '..', '.env');
+dotenv.config({ path: envPath });
 
 const client = new DiscordJS.Client({
   intents: [
@@ -91,12 +95,21 @@ client.on("ready", async () => {
       };
 
       case "ranking": {
+        const date = new Date(Date.now());
+        const year = format(date, "yyyy");
+        const month = format(date, "MM");
+
         const message = new MessageEmbed()
-        .setTitle("RANKING DOS CERVEJEIROS")
+        .setTitle(`RANKING DOS CERVEJEIROS (${month}/${year})`.toUpperCase())
         .setDescription("o raking é ordenado pelo cervejeiro que mais tem brejas em sua conta.")
         .setColor("RANDOM");
 
-        const users = await User.find({ where: { guild_id: guildId }, relations: ["beers"] });
+        const users = await User.createQueryBuilder("user")
+        .innerJoinAndSelect("user.beers", "beer", "beer.to_id = user.id")
+        .where("EXTRACT(MONTH FROM beer.created_at) = :month", { month })
+        .andWhere("EXTRACT(YEAR FROM beer.created_at) = :year", { year })
+        .getMany();
+        
         const ranking = users.sort((a, b) => b.beers.length - a.beers.length);
         for(let index = 0; index < ranking.length; index++) {
           const position = (index + 1);
