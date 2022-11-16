@@ -26,41 +26,26 @@ const client = new DiscordJS.Client({
 
 client.on("ready", async () => {
    client.on("guildCreate", async (guild) => {
-    const commands = guild?.commands;
+    // DISPARAR MENSAGEM DE BEM-VINDO
+    const members = await guild.members.fetch();
+    members.map(async (member) => {
+      if(!member.user.bot) {
+        await UserController.createOrFind({ user_id: member.user.id, guild_id: guild.id });
+      };
+    });
+   });
 
-    // ADICIONAR NOVOS COMANDOS
+   client.on("interactionCreate", async (interaction: any) => {
+    if(!interaction.isCommand) { 
+      return;
+    };
+
+    const { commandName, user, options, guildId, guild } = interaction;
+    const commands = guild?.commands;
     for(let botCommand of botCommands) {
       commands?.create(botCommand);
     };
 
-    // DISPARAR MENSAGEM DE BEM-VINDO
-    const mainChannelNames = ["geral", "general", "main"];
-    const channel = guild.channels.cache.find(value => mainChannelNames.includes(value.name));
-    if(channel && channel.isText()) {
-      const messageToSend = new MessageEmbed()
-      .setColor("RANDOM")
-      .setTitle("Olá cervejeiros! :wave:")
-      .setDescription("Sou o **BrejaBot**, um bot criado para automatizar o processo de premiação com cervejas... Até porque todos aqui gostam de uma cerveja geladinha né ?! :beers:")
-      .addField("/breja", "comando para dar uma breja geladinha como prêmio.")
-      .addField("/ranking", "comando para mostrar o ranking dos cervejeiros.")
-      .addField("/punir", "comando para punir um cervejeiro.")
-      .addField("/historico", "visualizar o histórico de um cervejeiro.")
-
-      await channel.send({ embeds: [messageToSend] });
-
-      const members = await guild.members.fetch();
-      members.map(async (member) => {
-        if(!member.user.bot) {
-          await UserController.createOrFind({ user_id: member.user.id, guild_id: guild.id });
-        };
-      });
-    };
-   });
-
-   client.on("interactionCreate", async (interaction: any) => {
-    if(!interaction.isCommand) { return };
-
-    const { commandName, user, options, guildId, guild } = interaction;
     switch(commandName) {
       case "breja": {
         const to = options.getUser("para");
@@ -95,10 +80,16 @@ client.on("ready", async () => {
       };
 
       case "ranking": {
+        const data = options.getString("data");
         const date = new Date(Date.now());
+
+        if(data && data.match(/^((0[1-9])|(1[0-2]))\/((2009)|(20[1-2][0-9]))$/)) {
+          date.setMonth(Number((data.split("/"))[0]) - 1);
+          date.setFullYear(Number((data.split("/"))[1]));
+        };
+
         const year = format(date, "yyyy");
         const month = format(date, "MM");
-
         const message = new MessageEmbed()
         .setTitle(`RANKING DOS CERVEJEIROS (${month}/${year})`.toUpperCase())
         .setDescription("o raking é ordenado pelo cervejeiro que mais tem brejas em sua conta.")
@@ -112,10 +103,15 @@ client.on("ready", async () => {
         
         const ranking = users.sort((a, b) => b.beers.length - a.beers.length);
         for(let index = 0; index < ranking.length; index++) {
-          const position = (index + 1);
           const item = ranking[(index)];
+          const totalOfBeers = item.beers.length;
+          const balance = Intl.NumberFormat('pt-BR', { 
+            style: "currency", 
+            currency: 'BRL',
+            minimumFractionDigits: 2,
+          }).format(5 * totalOfBeers);
 
-          message.addField(`${position}º LUGAR`, `<@${item.id}> COM TOTAL DE ${item.beers.length} BREJA(S)`);
+          message.addField(`${(index + 1)}º LUGAR`, `<@${item.id}> ${totalOfBeers} Brejas, Total ${balance}`);
         };
         
         return interaction.reply({ embeds: [message] });
@@ -180,12 +176,19 @@ client.on("ready", async () => {
           .andWhere("EXTRACT(YEAR FROM beer.created_at) = :year", { year: format(date, "yyyy") })
           .getMany();
 
+          const balance = Intl.NumberFormat('pt-BR', { 
+            style: "currency", 
+            currency: 'BRL',
+            minimumFractionDigits: 2,
+          }).format(5 * beers.length);
+
           const message = new MessageEmbed()
           .setTitle(`HISTÓRICO DO CERVEJEIRO`)
           .setDescription(`histórico do cervejeiro <@${who.id}>`)
           .setColor('RANDOM')
-          .addField("TOTAL", `${beers.length} breja(s)`, true)
-          .addField("DATA", `${format(date, "MM/yyyy")}`, true)
+          .addField("SALDO", balance, true)
+          .addField("BREJAS", `${beers.length} breja(s)`, true)
+          .addField("DATA", `${format(date, "MM/yyyy")}`, true);
 
           for(let beer of beers) {
             message.addField(`${format(beer.created_at, "dd/MM/yyyy")}`,
@@ -199,6 +202,22 @@ client.on("ready", async () => {
             ephemeral: true,
           });
         };
+      };
+
+      case "sobre": {
+        const messageToSend = new MessageEmbed()
+        .setColor("RANDOM")
+        .setTitle("Olá cervejeiro! :wave:")
+        .setDescription("Sou o **BrejaBot**, um bot criado para automatizar o processo de premiação com cervejas...\nAqui está o perfil do meu criador caso deseje entrar em contato para sugestões de melhorias https://github.com/SirEliaas")
+        .addField("/breja", "comando para dar uma breja geladinha como prêmio.")
+        .addField("/ranking", "comando para mostrar o ranking dos cervejeiros.")
+        .addField("/punir", "comando para punir um cervejeiro.")
+        .addField("/historico", "visualizar o histórico de um cervejeiro.")
+
+        return interaction.reply({
+          embeds: [messageToSend],
+          ephemeral: true,
+        });
       };
 
       default: { return };
