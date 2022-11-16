@@ -18,6 +18,12 @@ export default [{
   }, {
     name: "ranking",
     description: "visualize o ranking de brejas",
+    options: [{
+      name: "data",
+      description: `exemplo: ${format(new Date(), "MM/yyyy")}`,
+      type: Constants.ApplicationCommandOptionTypes.STRING,
+      required: false,
+    }]
   }, {
     name: "punir",
     description: "punir um cervejeiro",
@@ -46,4 +52,7 @@ export default [{
       type: Constants.ApplicationCommandOptionTypes.STRING,
       required: false,
     }]
+  }, {
+    name: "sobre",
+    description: "sobre mim e meus comandos."
   }] as Array<ApplicationCommandDataResolvable>;;
